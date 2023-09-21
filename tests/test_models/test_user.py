@@ -1,28 +1,32 @@
 #!/usr/bin/python3
-"""Defines unnittests for models/user.py."""
-import os
-import pep8
-import models
-import MySQLdb
-import unittest
+"""
+Defines unittests for models/user.py.
+"""
+
 from datetime import datetime
 from models.base_model import Base, BaseModel
 from models.user import User
 from models.engine.db_storage import DBStorage
+import os
+import pep8
+import unittest
 from models.engine.file_storage import FileStorage
 from sqlalchemy.exc import OperationalError
+import models
+import MySQLdb
 from sqlalchemy.orm import sessionmaker
 
 
 class TestUser(unittest.TestCase):
-    """Unittests for testing the User class"""
+    """
+    Unittests for testing the User class.
+    """
 
     @classmethod
-    def setUpClass(cls):
-        """User testing setup.
-        Temporarily renames any existing file.json.
-        Resets FileStorage objects dictionary.
-        Creates FileStorage, DBStorage and User instances for testing.
+    def set_up(cls):
+        """
+        Sets up testing methods.
+        Ensures database tables are created.
         """
         try:
             os.rename("file.json", "tmp")
@@ -32,17 +36,16 @@ class TestUser(unittest.TestCase):
         cls.filestorage = FileStorage()
         cls.user = User(email="poppy@holberton.com", password="betty98")
 
-        if type(models.storage) == DBStorage:
+        if type(models.db_storage) == DBStorage:
             cls.dbstorage = DBStorage()
             Base.metadata.create_all(cls.dbstorage._DBStorage__engine)
             Session = sessionmaker(bind=cls.dbstorage._DBStorage__engine)
             cls.dbstorage._DBStorage__session = Session()
 
     @classmethod
-    def tearDownClass(cls):
-        """User testing teardown.
-        Restore original file.json.
-        Delete the FileStorage, DBStorage and User test instances.
+    def tear_down(cls):
+        """
+        Tears down testing methods.
         """
         try:
             os.remove("file.json")
@@ -54,9 +57,32 @@ class TestUser(unittest.TestCase):
             pass
         del cls.user
         del cls.filestorage
-        if type(models.storage) == DBStorage:
+        if type(models.db_storage) == DBStorage:
             cls.dbstorage._DBStorage__session.close()
             del cls.dbstorage
+
+    def test_to_dict(self):
+        """Test to_dict method."""
+        user_dict = self.user.to_dict()
+        self.assertEqual(dict, type(user_dict))
+        self.assertEqual(self.user.id, user_dict["id"])
+        self.assertEqual("User", user_dict["__class__"])
+        self.assertEqual(self.user.created_at.isoformat(),
+                         user_dict["created_at"])
+        self.assertEqual(self.user.updated_at.isoformat(),
+                         user_dict["updated_at"])
+        self.assertEqual(self.user.email, user_dict["email"])
+        self.assertEqual(self.user.password, user_dict["password"])
+
+    @unittest.skipIf(type(models.db_storage) == DBStorage,
+                     "Testing DBStorage")
+    def test_save_filestorage(self):
+        """Test save method with FileStorage."""
+        old = self.user.updated_at
+        self.user.save()
+        self.assertLess(old, self.user.updated_at)
+        with open("file.json", "r") as f:
+            self.assertIn("User." + self.user.id, f.read())
 
     def test_pep8(self):
         """Test pep8 styling"""
@@ -101,30 +127,7 @@ class TestUser(unittest.TestCase):
         """Test initialization"""
         self.assertIsInstance(self.user, User)
 
-    def test_to_dict(self):
-        """Test to_dict method."""
-        user_dict = self.user.to_dict()
-        self.assertEqual(dict, type(user_dict))
-        self.assertEqual(self.user.id, user_dict["id"])
-        self.assertEqual("User", user_dict["__class__"])
-        self.assertEqual(self.user.created_at.isoformat(),
-                         user_dict["created_at"])
-        self.assertEqual(self.user.updated_at.isoformat(),
-                         user_dict["updated_at"])
-        self.assertEqual(self.user.email, user_dict["email"])
-        self.assertEqual(self.user.password, user_dict["password"])
-
-    @unittest.skipIf(type(models.storage) == DBStorage,
-                     "Testing DBStorage")
-    def test_save_filestorage(self):
-        """Test save method with FileStorage."""
-        old = self.user.updated_at
-        self.user.save()
-        self.assertLess(old, self.user.updated_at)
-        with open("file.json", "r") as f:
-            self.assertIn("User." + self.user.id, f.read())
-
-    @unittest.skipIf(type(models.storage) == FileStorage,
+    @unittest.skipIf(type(models.db_storage) == FileStorage,
                      "Testing FileStorage")
     def test_save_dbstorage(self):
         """Test save method with DBStorage."""
