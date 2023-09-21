@@ -30,7 +30,7 @@ class test_fileStorage(unittest.TestCase):
         """
         try:
             os.remove('file.json')
-        except FileNotFoundError:
+        except:
             pass
 
     def test_new(self):
@@ -39,7 +39,7 @@ class test_fileStorage(unittest.TestCase):
         for obj in db_storage.all().values():
             temp = obj
         self.assertTrue(temp is obj)
-
+    
     def test_obj_list_empty(self):
         """ __objects is initially empty """
         self.assertEqual(len(db_storage.all()), 0)
@@ -116,3 +116,4 @@ class test_fileStorage(unittest.TestCase):
         from models.engine.file_storage import FileStorage
         print(type(db_storage))
         self.assertEqual(type(db_storage), FileStorage)
+
