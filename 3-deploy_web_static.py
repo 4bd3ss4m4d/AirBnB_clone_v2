@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """
-Fabric script that generates a .tgz archive from the contents of the
-web_static folder of the AirBnB Clone repo
+Fabric script that deploys to web servers.
 """
 import datetime
 import os
@@ -11,7 +10,7 @@ from fabric.api import env, put, run, local
 
 
 # Web server IPs
-env.hosts = ['100.25.180.140', '54.82.156.0']
+env.hosts = ['34.234.201.201', '52.3.249.208']
 
 # Set the SSH key and username as environment variables
 env.key_filename = '~/.ssh/id_rsa'
@@ -107,3 +106,9 @@ def do_deploy(archive_path):
         return True
     except Exception:
         return False
+
+
+def deploy():
+    """Deploys archive to web servers"""
+    archive_path = do_pack()
+    return False if archive_path is None else do_deploy(archive_path)
